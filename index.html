@@ -1,0 +1,1046 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Kenz Ramadan Treasure Hunt</title>
+  <style>
+    /* Adding brand fonts, this is the plain font */
+    @font-face {
+      font-family: 'BahijTheSansArabic';
+      src: url('assets/17420522040263262_8n5/Bahij_TheSansArabic-Plain.ttf') format('truetype');
+      font-weight: normal;
+      font-style: normal;
+    }
+    /* Adding brand fonts, this is the bold font */
+    @font-face {
+      font-family: 'BahijTheSansArabic';
+      src: url('assets/17420522040132136_dtp/Bahij_TheSansArabic-Bold.ttf') format('truetype');
+      font-weight: bold;
+      font-style: normal;
+    }
+    /* Adding brand fonts, this is the light font */
+    @font-face {
+      font-family: 'BahijTheSansArabic';
+      src: url('assets/17420692167417111_e41/Bahij_TheSansArabic-ExtraLight.ttf') format('truetype');
+      font-weight: 200;
+      font-style: normal;
+    }
+    /* Center the popup on the screen and set a dark, semi-transparent body background with side spacing */
+    body {
+      font-family: 'BahijTheSansArabic', sans-serif;
+      background: linear-gradient(135deg, rgba(0, 0, 0, 0.5), rgba(50, 50, 50, 0.5));
+      margin: 0;
+      padding: 0px; /* Provides spacing on the sides */
+      direction: rtl;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      box-sizing: border-box;
+      direction: rtl;
+    }
+    /* Popup container at 100% opacity, 90% width of the screen */
+    #app {
+      position: relative;
+      width: 90%;
+      height: 80vh;
+      max-width: 600px;
+      background: #FF9000;
+      border-radius: 10px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+      padding: 50px 10px;
+      box-sizing: border-box;
+    }
+    /* Mission heading styling: show mission number only */
+    .mission h3 {
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+    /* MoEngage-style Dismiss/Close Button */
+    button.close.size-sm.light.close-btn {
+      position: absolute;
+      top: 0px;
+      right: 0px;
+      background: transparent;
+      border: none;
+      font-size: 40px;
+      cursor: pointer;
+      z-index: 1000;
+      color: #FFFFFF;
+      font-weight: 200;
+    }
+    /* Progress bar management, first thing, we hide it, and then enable it at questions. */
+    #globalProgressBar {
+        position: relative;
+        top: 60px;
+        opacity: 0;               /* initially hidden */
+        transition: opacity 0.5s ease-in-out;
+    }
+    /* Progress Bar Container */
+    #progressContainer {
+      position: relative;
+      margin: 0px auto; /* centers it horizontally and adds vertical spacing */
+      width: calc(100% - 20px); /* Some side margins */
+      height: 16px;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+    }
+    /* Pseudo-element for the empty (background) portion */
+    #progressContainer::before {
+      content: "";
+      position: absolute; /* Changed from relative to absolute */
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: repeating-linear-gradient(
+        150deg,
+        #ffffff,
+        #ffffff 32px,
+        #f0f0f0 32px,
+        #f0f0f0 64px
+      );
+      background-size: 200% 100%;
+      animation: stripes-left 12s linear infinite;
+      z-index: 0;
+    }
+    /* Filled portion of the progress bar */
+    #progress {
+      position: relative;
+      z-index: 1;
+      width: 0%; /* This value will be updated by your JS code */
+      height: 100%;
+      background: repeating-linear-gradient(
+        135deg,
+        #470C79,
+        #470C79 8px,
+        #5A1D93 8px,
+        #5A1D93 16px
+      );
+      background-size: 200% 100%;
+      border-radius: 8px;
+      transition: width 0.6s ease-in-out;
+      animation: stripes-left 12s linear infinite;
+    }
+    #progress.complete {
+      background: #470C79;
+      animation: none;
+    }
+    /* Keyframes: animate background-position so stripes move from right to left */
+    @keyframes stripes-left {
+      0% {
+        background-position: 0% 0;
+      }
+      100% {
+        background-position: 200% 0;
+      }
+    }
+    /* Screen transitions */
+    .screen {
+      padding: 20px;
+      margin: 60px 0px;
+      text-align: center;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+    .screen.active {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    /* Adding styles for headers and paragraphs */
+    h1 {
+      margin: 0 0 10px;
+      color: #FFFFFF;
+      font-size: 32px;
+      font-weight: bold;
+    }
+    h2 {
+      margin: 0 0 8px;
+      color: #FFFFFF;
+      font-size: 18px;
+      font-weight: bold;
+    }
+    h3 {
+      margin: 0 0 6px;
+      color: #555;
+      font-size: 14px;
+      font-weight: bold !important;
+      animation: flashTwice 4s linear infinite;
+    }
+    @keyframes flashTwice {
+      0% {
+        opacity: 1;
+      }
+      /* First flash: stays on then off */
+      10% {
+        opacity: 1;
+      }
+      20% {
+        opacity: 0;
+      }
+      30% {
+        opacity: 1;
+      }
+      /* Second flash: off then on */
+      40% {
+        opacity: 0;
+      }
+      50% {
+        opacity: 1;
+      }
+      /* Hold on for the remaining 50% of the cycle */
+      100% {
+        opacity: 1;
+      }
+    }
+    h4 {
+      margin: 0 0 6px;
+      color: #000000;
+      font-size: 18px;
+      font-weight: normal !important;
+    }
+    p {
+      color: #555;
+      line-height: 1.5;
+      font-size: 16px;
+    }
+    /* Mission Cards */
+    .mission {
+      background: #f9f9f9;
+      border: 1px solid #e0e0e0;
+      border-radius: 5px;
+      padding: 15px;
+      margin: 15px 0;
+      text-align: right;
+      height: 350px;
+    }
+    .missionButton {
+      text-align: left;
+    }
+    input[type="text"] {
+      width: calc(100% - 24px);
+      padding: 10px;
+      margin: 10px 0;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 16px;
+      text-align: center;
+      outline: none;
+      transition: border-color 0.3s;
+    }
+    input[type="text"]:focus {
+      border-color: #E0836F;
+    }
+    button.cta {
+      background-color: #00C150;
+      color: #fff;
+      border: none;
+      padding: 10px 20px;
+      margin: 10px 5px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: background-color 0.3s;
+      text-align: left !important;
+    }
+    button.cta:hover {
+      background-color: #FDC749;
+    }
+    .feedback {
+      font-weight: 600;
+      margin-top: 8px;
+    }
+    .feedback.correct {
+      color: #00C150;
+    }
+    .feedback.incorrect {
+      color: #E40031;
+    }
+    /* Adding brand font to the buttons */
+    button, button.cta {
+      font-family: 'BahijTheSansArabic', sans-serif;
+    }
+    #moonIcon {
+      position: fixed;   /* Always visible even on scroll */
+      top: 10%;
+      left: 10%;
+      height: 100px;       /* 10% of viewport width */
+      z-index: 2000;     /* Ensure it's on top of other elements */
+    }
+    #chestIcon {
+      position: fixed;
+      bottom: 15%;
+      right: 8%;
+      height: 150px;
+      z-index: 2000; /* Make sure it's on top of other elements */
+    }
+    /* Celebration overlay (should cover the viewport) */
+    #celebrationOverlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none; /* Let clicks pass through */
+      z-index: 3000; /* On top of everything */
+      display: none; /* Initially hidden */
+    }
+    
+    /* Each celebration icon */
+    .celebration-icon {
+      position: absolute;
+      top: -50px; /* Start slightly above the visible area */
+      font-size: 2rem;  /* Adjust size as needed */
+      animation: popFall 2s ease-out forwards;
+    }
+    
+    /* Keyframes: pop into view then fall */
+    @keyframes popFall {
+      0% {
+        opacity: 0;
+        transform: translateY(0) scale(0.5);
+      }
+      20% {
+        opacity: 1;
+        transform: translateY(20px) scale(1.2);
+      }
+      100% {
+        opacity: 0;
+        transform: translateY(100vh) scale(1);
+      }
+    }
+
+  </style>
+</head>
+
+<body>
+  
+  <img src="assets/17422675668722427_0xf/moon.png" id="moonIcon" alt="Moon Icon">
+  <img src="assets/1742267566888652_fvb/chest.png" id="chestIcon" alt="Chest Icon">
+  
+  <!-- Celebration overlay (initially hidden) -->
+  <div id="celebrationOverlay" style="display: none;"></div>
+  <audio id="celebrationSound" src="https://www.dropbox.com/scl/fi/w4kgojja99wroki71a7zp/tada-sound.mp3?rlkey=vjjuiwzlmnvwcg7oibgn67iyn&amp;st=eho0poji&amp;raw=1"></audio>
+  
+  <div id="app">
+    
+    <!-- MoEngage-style Dismiss/Close Button using MoEngage functions -->
+    <button type="button" class="close size-sm light close-btn" id="close-btn" aria-label="Close"
+      onclick="moengage.trackDismiss('close-btn'); moengage.dismissMessage();">
+      <span aria-hidden="true">&times;</span>
+    </button>
+    
+        <!-- Progress Bar -->
+    <div id="globalProgressBar">
+      <div id="progressContainer">
+        <div id="progress"></div>
+      </div>
+    </div>
+    
+    <!-- Welcome Screen -->
+    <div id="welcomeScreen" class="screen active">
+      <h1>كنز كوينز</h1>
+      <p>
+        مرحبًا بك في رحلة البحث عن الكنز ستقوم بحل ألغاز، فتح خصومات، والدخول في سحب لربح 100 ريال.
+        كل مستوى يتكون من مهام تتزايد صعوبتها.
+      </p>
+      <button id="startHunt" class="cta">ابدأ المغامرة</button>
+    </div>
+    
+    <!-- Level 1: The Treasure Map (Easy) -->
+    <div id="level1" class="screen" style="display:none;">
+      
+      <h2>🟢المستوى الأول: خريطة الكنز</h2>
+      <h3>الجائزة: خصم 20%</h3>
+      
+      <!-- Mission 1 -->
+      <div id="l1Mission1" class="mission">
+        <h4>المهمة الأولى</h4>
+        <p>{{ContentBlock['KenzRamadan_L1M1_Question']}}</p>
+        <input type="text" id="l1m1Answer" placeholder="اكتب الإجابة هنا...">
+        <div class="missionButton"><button onclick="checkAnswer(1,1)" class="cta">إرسال</button>
+        <p id="l1m1Feedback" class="feedback"></p></div>
+      </div>
+      
+      <!-- Mission 2 -->
+      <div id="l1Mission2" class="mission" style="display:none;">
+        <h4>المهمة الثانية</h4>
+        <p>{{ContentBlock['KenzRamadan_L1M2_Question']}}</p>
+        <input type="text" id="l1m2Answer" placeholder="اكتب الإجابة هنا...">
+        <div class="missionButton"><button onclick="checkAnswer(1,2)" class="cta">إرسال</button>
+        <p id="l1m2Feedback" class="feedback"></p></div>
+      </div>
+      
+      <!-- Mission 3 simplified: only part A is included; part B will be injected via JS -->
+      <div id="l1Mission3" class="mission" style="display:none;">
+        <h4>المهمة الثالثة (جزئين)</h4>
+        <p><strong>الجزء الأول:</strong>
+        {{ContentBlock['KenzRamadan_L1M3_Question1']}}</p>
+        <input type="text" id="l1m3aAnswer" placeholder="اكتب الإجابة هنا...">
+        <div class="missionButton"><button onclick="checkAnswer(1,3,'a')" class="cta">إرسال</button>
+        <p id="l1m3aFeedback" class="feedback"></p></div>
+      </div>
+      
+      <!-- Level 1 Completion -->
+      <div id="l1Completion" style="display:none;">
+        <p>مبروك! 🎉 حصلت على خصم 20%! هل تود الانتقال إلى المستوى التالي؟</p>
+        <button onclick="proceedToLevel(2)" class="cta">أكمل التحدي</button>
+        <button onclick="optOut()" class="cta">أرغب في استلام الهدية فقط</button>
+      </div>
+    </div>
+    
+    <!-- Level 2: The Treasure Key (Medium) -->
+    <div id="level2" class="screen" style="display:none;">
+      <h2>🟡المستوى الثاني: مفتاح الكنز</h2>
+      <h3>الجائزة: خصم 30%</h3>
+            
+      <div id="l2Mission1" class="mission">
+        <h4>المهمة الأولى</h4>
+        <p>{{ContentBlock['KenzRamadan_L2M1_Question']}}</p>
+        <input type="text" id="l2m1Answer" placeholder="اكتب الإجابة هنا...">
+        <div class="missionButton"><button onclick="checkAnswer(2,1)" class="cta">إرسال</button>
+        <p id="l2m1Feedback" class="feedback"></p></div>
+      </div>
+      
+      <div id="l2Mission2" class="mission" style="display:none;">
+        <h4>المهمة الثانية</h4>
+        <p>{{ContentBlock['KenzRamadan_L2M2_Question']}}</p>
+        <input type="text" id="l2m2Answer" placeholder="اكتب الإجابة هنا...">
+        <div class="missionButton"><button onclick="checkAnswer(2,2)" class="cta">إرسال</button>
+        <p id="l2m2Feedback" class="feedback"></p></div>
+      </div>
+      
+      <!-- Mission 3 simplified: only part A is included; part B will be injected via JS -->
+      <div id="l2Mission3" class="mission" style="display:none;">
+        <h4>المهمة الثالثة (جزئين)</h4>
+        <p><strong>الجزء الأول:</strong>
+        {{ContentBlock['KenzRamadan_L2M3_Question']}}</p>
+        <input type="text" id="l2m3aAnswer" placeholder="اكتب الإجابة هنا...">
+        <div class="missionButton"><button onclick="checkAnswer(2,3,'a')" class="cta">إرسال</button>
+        <p id="l2m3aFeedback" class="feedback"></p></div>
+      </div>
+      
+      <div id="l2Completion" style="display:none;">
+        <p>مبروك! 🎉 حصلت على خصم 30%! هل تود الانتقال إلى المستوى الثالث؟</p>
+        <p>ملحوظة: المستوى القادم في الشرقية فقط</p>
+        <button onclick="proceedToLevel(3)" class="cta">أكمل التحدي</button>
+        <button onclick="optOut()" class="cta">أرغب في استلام الهدية فقط</button>
+      </div>
+    </div>
+    
+    <!-- Level 3: The Buried Treasure (Hard) -->
+    <div id="level3" class="screen" style="display:none;">
+      <h2>🔴المستوى الثالث: (الشرقية فقط)</h2>
+      <h3>الجائزة: خصم 40% + سحب 100 ريال</h3>
+      
+      <div id="l3Mission1" class="mission">
+        <h4>المهمة الأولى</h4>
+        <p>{{ContentBlock['KenzRamadan_L3M1_Question']}}</p>
+        <input type="text" id="l3m1Answer" placeholder="اكتب الإجابة هنا...">
+        <div class="missionButton"><button onclick="checkAnswer(3,1)" class="cta">إرسال</button>
+        <p id="l3m1Feedback" class="feedback"></p></div>
+      </div>
+      
+      <!-- Mission 2 simplified: only part A is included; part B will be injected via JS -->
+      <div id="l3Mission2" class="mission" style="display:none;">
+        <h4>المهمة الثانية (جزئين)</h4>
+        <p><strong>الجزء الأول:</strong>
+        {{ContentBlock['KenzRamadan_L3M2_Question']}}</p>
+        <input type="text" id="l3m2aAnswer" placeholder="اكتب الإجابة هنا...">
+        <div class="missionButton"><button onclick="checkAnswer(3,2,'a')" class="cta">إرسال</button>
+        <p id="l3m2aFeedback" class="feedback"></p></div>
+      </div>
+      
+      <!-- Mission 3 simplified: only part A is included; part B will be injected via JS -->
+      <div id="l3Mission3" class="mission" style="display:none;">
+        <h4>المهمة الثالثة (جزئين)</h4>
+        <p><strong>الجزء الأول:</strong>
+        {{ContentBlock['KenzRamadan_L3M3_Question']}}</p>
+        <input type="text" id="l3m3aAnswer" placeholder="اكتب الإجابة هنا...">
+        <div class="missionButton"><button onclick="checkAnswer(3,3,'a')" class="cta">إرسال</button>
+        <p id="l3m3aFeedback" class="feedback"></p></div>
+      </div>
+      
+      <div id="l3Completion" style="display:none;">
+        <p>مبروك! 🎉 لقد أكملت جميع المهام وحصلت على خصم 40%! ودخلت في سحب لربح 100 ريال!</p>
+        <button onclick="finishHunt()" class="cta">إنهاء اللعبة</button>
+      </div>
+    </div>
+    
+    <!-- Final Screen -->
+    <div id="finalScreen" class="screen" style="display:none;">
+      <h2>شكرًا لمشاركتك!</h2>
+      <p>استمتع بخصمك وتابع إعلان أسماء الفائزين بسحب 100 ريال في يوم 15 ابريل.</p>
+      <button onclick="resetGame()" class="cta">إعادة البحث من البداية</button>
+    </div>
+  </div>
+  
+  <script>
+    // Time of feedback and levels transition
+    const feedbackDelay = 1000; // delay in milliseconds
+    
+    // Checks user progress from saved attribute
+    var userProgress = "{{UserAttribute['Kenz Ramadan Progress']|default('l1m1')}}";
+    // var userProgress = "l3m3"; // For the sake of testing without personalization
+    
+    // Updating the progress bar based on saved values
+    var levelSaved = parseInt(userProgress.charAt(1));   // e.g., 1, 2, or 3
+    var missionSaved = parseInt(userProgress.charAt(3));   // e.g., 1, 2, or 3
+    var overallMission = (levelSaved - 1) * 3 + missionSaved - 1; // For 3 missions per level, and deducts one for the progress bar
+    
+    // Tracking events (replace with your analytics integration as needed)
+    function trackEvent(eventName, details) {
+      console.log("Tracking event:", eventName, details || "");
+    }
+    // Global progress tracking
+    const totalMissions = 9;
+    let completedMissions = 0;
+    completedMissions = overallMission;
+    function updateProgressBar() {
+      const percent = (completedMissions / totalMissions) * 100;
+      const progressElem = document.getElementById("progress");
+      progressElem.style.width = percent + "%";
+      
+      if(percent >= 100) {
+        progressElem.classList.add("complete");
+      } else {
+        progressElem.classList.remove("complete");
+      }
+    }
+    
+    // Expected answers (normalized to lowercase)
+    const answers = {
+      1: {
+        1: {{ContentBlock['KenzRamadan_L1M1_Answer']}},
+        2: {{ContentBlock['KenzRamadan_L1M2_Answer']}},
+        3: { a: {{ContentBlock['KenzRamadan_L1M3_Answer1']}}, b: {{ContentBlock['KenzRamadan_L1M3_Answer2']}} }
+      },
+      2: {
+        1: {{ContentBlock['KenzRamadan_L2M1_Answer']}},
+        2: {{ContentBlock['KenzRamadan_L2M2_Answer']}},
+        3: { a: {{ContentBlock['KenzRamadan_L2M3_Answer']}}, b: {{ContentBlock['KenzRamadan_L2M3_Answer1']}} }
+      },
+      3: {
+        1: {{ContentBlock['KenzRamadan_L3M1_Answer']}},
+        2: { a: {{ContentBlock['KenzRamadan_L3M2_Answer']}}, b: {{ContentBlock['KenzRamadan_L3M2_Answer1']}} },
+        3: { a: {{ContentBlock['KenzRamadan_L3M3_Answer']}}, b: {{ContentBlock['KenzRamadan_L3M3_Answer1']}} }
+      }
+    };
+    
+    // Remove spacing and special characters, and lowercase the user's input
+    function normalize(str) {
+      return str
+        .toLowerCase()
+        // Replace multiple spaces with a single space.
+        .replace(/\s{2,}/g, ' ')
+        // Replace Arabic "ه" at the end of a word (lookahead for space or end-of-string) with "ة".
+        .replace(/ه(?=\s|$)/g, 'ة')
+        // Replace Arabic "ى" at the end of a word (lookahead for space or end-of-string) with "ي".
+        .replace(/ى(?=\s|$)/g, 'ي')
+        // Remove leading/trailing whitespace.
+        .trim();
+    }
+
+    function checkAnswer(level, mission, part) {
+      let userInput, expected;
+      
+      // Handling double questions with exceptions -- L1M3
+      if (level === 1 && mission === 3) {
+        if (part === 'a') {
+          userInput = document.getElementById("l1m3aAnswer").value;
+          expected = answers[1][3].a;
+          if (expected.includes(normalize(userInput))) { // Matching with and array of answers
+            // Part A is correct: show feedback and update progress to "l1m3a"
+            document.getElementById("l1m3aFeedback").innerText = "صحيح!";
+            document.getElementById("l1m3aFeedback").className = "feedback correct";
+            
+            // Wait for feedbackDelay milliseconds before replacing the content with part B
+            setTimeout(() => {
+              const level1mission3Container = document.getElementById("l1Mission3");
+              level1mission3Container.innerHTML = `
+                <h4>المهمة الثالثة (جزئين)</h4>
+                <p><strong>الجزء الثاني:</strong>
+                {{ContentBlock['KenzRamadan_L1M3_Question2']}}</p>
+                <input type="text" id="l1m3bAnswer" placeholder="اكتب الإجابة هنا...">
+                <div class="missionButton">
+                  <button onclick="checkAnswer(1,3,'b')" class="cta">إرسال</button>
+                  <p id="l1m3bFeedback" class="feedback"></p>
+                </div>
+              `;
+              trackEvent("mission1_3_partA_completed", { level: 1, mission: 3 });
+            }, feedbackDelay);
+            trackEvent("mission1_3_partA_completed", { level: 1, mission: 3 });
+          } else {
+            document.getElementById("l1m3aFeedback").innerText = "خطأ، حاول مجددًا.";
+            document.getElementById("l1m3aFeedback").className = "feedback incorrect";
+          }
+        } else if (part === 'b') {
+          userInput = document.getElementById("l1m3bAnswer").value;
+          expected = answers[1][3].b;
+          if (expected.includes(normalize(userInput))) { // Matching with and array of answers
+            document.getElementById("l1m3bFeedback").innerText = "صحيح!";
+            document.getElementById("l1m3bFeedback").className = "feedback correct";
+            
+            // Now mission 3 is complete – update progress to "l1m3"
+            userProgress = "l2m1";
+            moengage.setUserAttribute("Kenz Ramadan Progress", userProgress);
+            
+            completedMissions++;
+            updateProgressBar();
+            trackEvent("mission1_3_completed", { level: 1, mission: 3 });
+            setTimeout(() => {
+              document.getElementById("l1Mission3").style.display = "none";
+              document.getElementById("l1Completion").style.display = "block";
+              fireLevelPassedEvent(1, "KENZ20");
+            }, 500);
+            triggerCelebration(); // Trigger celebration when level 1 is finished.
+          } else {
+            document.getElementById("l1m3bFeedback").innerText = "خطأ، حاول مجددًا.";
+            document.getElementById("l1m3bFeedback").className = "feedback incorrect";
+          }
+        }
+      } else if (level === 2 && mission === 3) { // Handling double questions with exceptions -- L2M3
+        if (part === 'a') {
+          userInput = document.getElementById("l2m3aAnswer").value;
+          expected = answers[2][3].a;
+          if (expected.includes(normalize(userInput))) { // Matching with and array of answers
+            // Part A is correct: show feedback and update progress to "l1m3a"
+            document.getElementById("l2m3aFeedback").innerText = "صحيح!";
+            document.getElementById("l2m3aFeedback").className = "feedback correct";
+            
+            // Wait for feedbackDelay milliseconds before replacing the content with part B
+            setTimeout(() => {
+              const level2mission3Container = document.getElementById("l2Mission3");
+              level2mission3Container.innerHTML = `
+                <h4>المهمة الثالثة (جزئين)</h4>
+                <p><strong>الجزء الثاني:</strong>
+                {{ContentBlock['KenzRamadan_L2M3_Question1']}}</p>
+                <input type="text" id="l2m3bAnswer" placeholder="اكتب الإجابة هنا...">
+                <div class="missionButton">
+                  <button onclick="checkAnswer(2,3,'b')" class="cta">إرسال</button>
+                  <p id="l2m3bFeedback" class="feedback"></p>
+                </div>
+              `;
+              trackEvent("mission2_3_partA_completed", { level: 2, mission: 3 });
+            }, feedbackDelay);
+            trackEvent("mission2_3_partA_completed", { level: 2, mission: 3 });
+          } else {
+            document.getElementById("l2m3aFeedback").innerText = "خطأ، حاول مجددًا.";
+            document.getElementById("l2m3aFeedback").className = "feedback incorrect";
+          }
+        } else if (part === 'b') {
+          userInput = document.getElementById("l2m3bAnswer").value;
+          expected = answers[2][3].b;
+          if (expected.includes(normalize(userInput))) { // Matching with and array of answers
+            document.getElementById("l2m3bFeedback").innerText = "صحيح!";
+            document.getElementById("l2m3bFeedback").className = "feedback correct";
+            
+            // Now mission 3 is complete – update progress to "l1m3"
+            userProgress = "l3m1";
+            moengage.setUserAttribute("Kenz Ramadan Progress", userProgress);
+            
+            completedMissions++;
+            updateProgressBar();
+            trackEvent("mission2_3_completed", { level: 1, mission: 3 });
+            setTimeout(() => {
+              document.getElementById("l2Mission3").style.display = "none";
+              document.getElementById("l2Completion").style.display = "block";
+              fireLevelPassedEvent(2, "KENZ30");
+            }, 500);
+            triggerCelebration(); // Trigger celebration when level 1 is finished.
+          } else {
+            document.getElementById("l2m3bFeedback").innerText = "خطأ، حاول مجددًا.";
+            document.getElementById("l2m3bFeedback").className = "feedback incorrect";
+          }
+        }
+      } else if (level === 3 && mission === 2) { // Handling double questions with exceptions -- L3M2
+        if (part === 'a') {
+          userInput = document.getElementById("l3m2aAnswer").value;
+          expected = answers[3][2].a;
+          if (expected.includes(normalize(userInput))) { // Matching with and array of answers
+            // Part A is correct: show feedback and update progress to "l3m2a"
+            document.getElementById("l3m2aFeedback").innerText = "صحيح!";
+            document.getElementById("l3m2aFeedback").className = "feedback correct";
+            
+            // Wait for feedbackDelay milliseconds before replacing the content with part B
+            setTimeout(() => {
+              const level3mission2Container = document.getElementById("l3Mission2");     // NEEDS EDITS ##################### NEEDS EDITS
+              level3mission2Container.innerHTML = `
+                <h4>المهمة الثانية (جزئين)</h4>
+                <p><strong>الجزء الثاني:</strong>
+                {{ContentBlock['KenzRamadan_L3M2_Question1']}}</p>
+                <input type="text" id="l3m2bAnswer" placeholder="اكتب الإجابة هنا...">
+                <div class="missionButton">
+                  <button onclick="checkAnswer(3,2,'b')" class="cta">إرسال</button>
+                  <p id="l3m2bFeedback" class="feedback"></p>
+                </div>
+              `;
+              trackEvent("mission3_2_partA_completed", { level: 3, mission: 2 });
+            }, feedbackDelay);
+            trackEvent("mission3_2_partA_completed", { level: 3, mission: 2 });
+          } else {
+            document.getElementById("l3m2aFeedback").innerText = "خطأ، حاول مجددًا.";
+            document.getElementById("l3m2aFeedback").className = "feedback incorrect";
+          }
+        } else if (part === 'b') {
+          userInput = document.getElementById("l3m2bAnswer").value;
+          expected = answers[3][2].b;
+          if (expected.includes(normalize(userInput))) { // Matching with and array of answers
+            document.getElementById("l3m2bFeedback").innerText = "صحيح!";
+            document.getElementById("l3m2bFeedback").className = "feedback correct";
+            
+            // Now mission 3 is complete – update progress to "l3m3"
+            userProgress = "l3m3";
+            moengage.setUserAttribute("Kenz Ramadan Progress", userProgress);
+            
+            completedMissions++;
+            updateProgressBar();
+            trackEvent("mission3_2_completed", { level: 3, mission: 2 });
+            setTimeout(() => {
+              document.getElementById("l3Mission2").style.display = "none";
+              document.getElementById("l3Mission3").style.display = "block";
+            }, 500);
+          } else {
+            document.getElementById("l3m2bFeedback").innerText = "خطأ، حاول مجددًا.";
+            document.getElementById("l3m2bFeedback").className = "feedback incorrect";
+          }
+        }
+      } else if (level === 3 && mission === 3) { // Handling double questions with exceptions -- L3M2
+        if (part === 'a') {
+          userInput = document.getElementById("l3m3aAnswer").value;
+          expected = answers[3][3].a;
+          if (expected.includes(normalize(userInput))) { // Matching with and array of answers
+            // Part A is correct: show feedback and update progress to "l1m3a"
+            document.getElementById("l3m3aFeedback").innerText = "صحيح!";
+            document.getElementById("l3m3aFeedback").className = "feedback correct";
+            
+            // Wait for feedbackDelay milliseconds before replacing the content with part B
+            setTimeout(() => {
+              const level3mission3Container = document.getElementById("l3Mission3");
+              level3mission3Container.innerHTML = `
+                <h4>المهمة الثالثة (جزئين)</h4>
+                <p><strong>الجزء الثاني:</strong>
+                {{ContentBlock['KenzRamadan_L3M3_Question1']}}</p>
+                <input type="text" id="l3m3bAnswer" placeholder="اكتب الإجابة هنا...">
+                <div class="missionButton">
+                  <button onclick="checkAnswer(3,3,'b')" class="cta">إرسال</button>
+                  <p id="l3m3bFeedback" class="feedback"></p>
+                </div>
+              `;
+              trackEvent("mission3_3_partA_completed", { level: 3, mission: 3 });
+            }, feedbackDelay);
+            trackEvent("mission2_3_partA_completed", { level: 3, mission: 3 });
+          } else {
+            document.getElementById("l3m3aFeedback").innerText = "خطأ، حاول مجددًا.";
+            document.getElementById("l3m3aFeedback").className = "feedback incorrect";
+          }
+        } else if (part === 'b') {
+          userInput = document.getElementById("l3m3bAnswer").value;
+          expected = answers[3][3].b;
+          if (expected.includes(normalize(userInput))) { // Matching with and array of answers
+            document.getElementById("l3m3bFeedback").innerText = "صحيح!";
+            document.getElementById("l3m3bFeedback").className = "feedback correct";
+            
+            // Now mission 3 is complete – update progress to "l4m1"
+            userProgress = "l4m1";
+            moengage.setUserAttribute("Kenz Ramadan Progress", userProgress);
+            
+            completedMissions++;
+            updateProgressBar();
+            trackEvent("mission3_3_completed", { level: 3, mission: 3 });
+            setTimeout(() => {
+              document.getElementById("l3Mission3").style.display = "none";
+              document.getElementById("l3Completion").style.display = "block";
+              fireLevelPassedEvent(3, "KENZ40");
+            }, 500);
+            triggerCelebration(); // Trigger celebration when level 1 is finished.
+          } else {
+            document.getElementById("l3m3bFeedback").innerText = "خطأ، حاول مجددًا.";
+            document.getElementById("l3m3bFeedback").className = "feedback incorrect";
+          }
+        }
+      } else {
+        let inputId = `l${level}m${mission}Answer`;
+        let feedbackId = `l${level}m${mission}Feedback`;
+        userInput = document.getElementById(inputId).value;
+        expected = answers[level][mission];
+        // if (normalize(userInput) === expected) {
+        if (expected.includes(normalize(userInput))) { // Matching with and array of answers
+          
+          document.getElementById(feedbackId).innerText = "صحيح!";
+          document.getElementById(feedbackId).className = "feedback correct";
+          
+          // For other missions, update progress as "l{level}m{mission}"
+          let nextLevel, nextMission;
+          if (mission < 3) {
+            nextLevel = level;
+            nextMission = mission + 1;
+          } else {
+            nextLevel = level + 1;
+            nextMission = 1;
+          }
+          userProgress = "l" + nextLevel + "m" + nextMission;
+          moengage.setUserAttribute("Kenz Ramadan Progress", userProgress);
+          
+          completedMissions++;
+          updateProgressBar();
+          trackEvent("mission_completed", { level: level, mission: mission });
+          setTimeout(() => {
+            advanceMission(level, mission);
+          }, feedbackDelay);
+        } else {
+          document.getElementById(feedbackId).innerText = "خطأ، حاول مجددًا.";
+          document.getElementById(feedbackId).className = "feedback incorrect";
+        }
+      }
+    }
+    
+    // Use this function to assign the user to the promo of the won lovel
+    function fireLevelPassedEvent(level, promo) {
+      moengage.setUserAttribute("Kenz Ramadan Finished Level", level);
+      moengage.trackEvent("kenz_ramadan_passed_level", { level: level, promo: promo });
+    }
+    
+    function advanceMission(level, mission) {
+      if(level === 1) {
+        if(mission === 1) {
+          document.getElementById("l1Mission1").style.display = "none";
+          document.getElementById("l1Mission2").style.display = "block";
+        } else if(mission === 2) {
+          document.getElementById("l1Mission2").style.display = "none";
+          document.getElementById("l1Mission3").style.display = "block";
+        }
+      } else if(level === 2) {
+        if(mission === 1) {
+          document.getElementById("l2Mission1").style.display = "none";
+          document.getElementById("l2Mission2").style.display = "block";
+        } else if(mission === 2) {
+          document.getElementById("l2Mission2").style.display = "none";
+          document.getElementById("l2Mission3").style.display = "block";
+        } else if(mission === 3) {
+          triggerCelebration(); // Trigger celebration when level 1 is finished
+          fireLevelPassedEvent(2); // Add user to second promo
+          document.getElementById("l2Mission3").style.display = "none";
+          document.getElementById("l2Completion").style.display = "block";
+        }
+      } else if(level === 3) {
+        if(mission === 1) {
+          document.getElementById("l3Mission1").style.display = "none";
+          document.getElementById("l3Mission2").style.display = "block";
+        } else if(mission === 2) {
+          // document.getElementById("l3Mission2").style.display = "none";
+          // document.getElementById("l3Mission3").style.display = "block";
+        } else if(mission === 3) {
+          triggerCelebration(); // <-- Trigger celebration when level 1 is finished
+          fireLevelPassedEvent(3); // Add user to third promo
+          document.getElementById("l3Mission3").style.display = "none";
+          document.getElementById("l3Completion").style.display = "block";
+        }
+      }
+    }
+    function proceedToLevel(nextLevel) {
+      if(nextLevel === 2) {
+        document.getElementById("level1").classList.remove("active");
+        document.getElementById("level1").style.display = "none";
+        document.getElementById("level2").style.display = "block";
+        setTimeout(() => { 
+          document.getElementById("level2").classList.add("active"); 
+          trackEvent("level_transition", { from: 1, to: 2 });
+        }, 100);
+      } else if(nextLevel === 3) {
+        document.getElementById("level2").classList.remove("active");
+        document.getElementById("level2").style.display = "none";
+        document.getElementById("level3").style.display = "block";
+        setTimeout(() => { 
+          document.getElementById("level3").classList.add("active"); 
+          trackEvent("level_transition", { from: 2, to: 3 });
+        }, 100);
+      }
+    }
+    // Updated optOut() function to also call the MoEngage dismiss function
+    function optOut() {
+      trackEvent("popup_dismissed");
+      moengage.dismissMessage();
+    }
+    function finishHunt() {
+      trackEvent("game_finished");
+      // Hide the entire level 3 container (which contains the winning screen)
+      const level3 = document.getElementById("level3");
+      if (level3) {
+        level3.style.display = "none";
+        level3.classList.remove("active");
+      }
+      // Show the final screen
+      const finalScreen = document.getElementById("finalScreen");
+      finalScreen.style.display = "block";
+      setTimeout(() => { 
+        finalScreen.classList.add("active"); 
+      }, 100);
+    }
+    
+    // Celebration Animation function
+    function triggerCelebration() { // ############################################################ Celebration
+      const overlay = document.getElementById("celebrationOverlay");
+      overlay.innerHTML = ""; // Clear any previous icons
+      overlay.style.display = "block";
+    
+      // Play celebration sound
+      const sound = document.getElementById("celebrationSound");
+      sound.currentTime = 0;
+      sound.play();
+    
+      // Array of celebration emojis (you can add more)
+      const emojis = ["🎉", "🎊", "✨", "🥳", "💥", "🎈"];
+      const numIcons = 30; // Number of icons to generate
+    
+      for (let i = 0; i < numIcons; i++) {
+        const iconElem = document.createElement("div");
+        iconElem.classList.add("celebration-icon");
+        iconElem.innerText = emojis[Math.floor(Math.random() * emojis.length)];
+        
+        // Random horizontal position (0% to 100%)
+        iconElem.style.left = Math.random() * 100 + "%";
+        // Assign a random delay up to 0.5s
+        iconElem.style.animationDelay = Math.random() * 0.5 + "s";
+        
+        overlay.appendChild(iconElem);
+      }
+      
+      // Remove the overlay after 2 seconds (after animation completes)
+      setTimeout(() => {
+        overlay.style.display = "none";
+      }, 2000);
+    }
+    
+    // Remove the welcome screen first and navigate to the correct mission ################################################ navigation based on progress
+    document.getElementById("startHunt").addEventListener("click", function(){
+      trackEvent("start_hunt");
+      
+      // Remove the welcome screen first and navigate to the correct mission
+      document.getElementById("welcomeScreen").classList.remove("active");
+      setTimeout(() => {
+        document.getElementById("welcomeScreen").style.display = "none";
+        
+        // Check saved progress
+        if(userProgress === "l4m1"){
+          // User has finished the game. Jump directly to the final screen.
+          document.getElementById("finalScreen").style.display = "block";
+          setTimeout(() => { 
+            document.getElementById("finalScreen").classList.add("active"); 
+          }, 100);
+          
+        // Check saved progress: if it is still "l1m1", proceed as normal.
+        } else if(userProgress === "l1m1"){
+          // Show level 1 and default (mission 1)
+          document.getElementById("level1").style.display = "block";
+          setTimeout(() => { 
+            document.getElementById("level1").classList.add("active"); 
+          }, 100);
+        } else {
+          // Parse the userProgress string, e.g., "l1m2"
+          // Assume format: l<level>m<mission> in lower-case.
+          var level = parseInt(userProgress.charAt(1)); // e.g., "1"
+          var mission = parseInt(userProgress.charAt(3)); // e.g., "2"
+          
+          // Hide all level containers first (if needed)
+          document.getElementById("level1").style.display = "none";
+          document.getElementById("level2").style.display = "none";
+          document.getElementById("level3").style.display = "none";
+          
+          // Show the level container based on saved level:
+          if(level === 1){
+            document.getElementById("level1").style.display = "block";
+            // Hide the missions before the one we need:
+            if(mission === 2){
+              document.getElementById("l1Mission1").style.display = "none";
+              document.getElementById("l1Mission2").style.display = "block";
+            } else if(mission === 3){
+              document.getElementById("l1Mission1").style.display = "none";
+              document.getElementById("l1Mission2").style.display = "none";
+              document.getElementById("l1Mission3").style.display = "block";
+            }
+            setTimeout(() => { 
+              document.getElementById("level1").classList.add("active"); 
+            }, 100);
+          } else if(level === 2){
+            document.getElementById("level2").style.display = "block";
+            // Here, assume missions display in order; you'll need similar logic to show the correct mission.
+            // For example, if mission 2 is saved, hide mission 1:
+            if(mission === 2){
+              document.getElementById("l2Mission1").style.display = "none";
+              document.getElementById("l2Mission2").style.display = "block";
+            } else if(mission === 3){
+              document.getElementById("l2Mission1").style.display = "none";
+              document.getElementById("l2Mission2").style.display = "none";
+              document.getElementById("l2Mission3").style.display = "block";
+            }
+            setTimeout(() => { 
+              document.getElementById("level2").classList.add("active"); 
+            }, 100);
+          } else if(level === 3){
+            document.getElementById("level3").style.display = "block";
+            if(mission === 2){
+              document.getElementById("l3Mission1").style.display = "none";
+              document.getElementById("l3Mission2").style.display = "block";
+            } else if(mission === 3){
+              document.getElementById("l3Mission1").style.display = "none";
+              document.getElementById("l3Mission2").style.display = "none";
+              document.getElementById("l3Mission3").style.display = "block";
+            }
+            setTimeout(() => { 
+              document.getElementById("level3").classList.add("active"); 
+            }, 100);
+          }
+        }
+        
+      }, 300);
+      
+      // Fade in the progress bar after 1 second
+      setTimeout(function() {
+        document.getElementById("globalProgressBar").style.opacity = "1";
+      }, 1000);
+    });
+    
+    // Logic  of restating the game
+    function resetGame() {
+      // Reset global progress variables
+      completedMissions = 0;
+      updateProgressBar();
+      
+      // Reset user progress variable and save it as a custom attribute
+      userProgress = "l1m1";
+      moengage.setUserAttribute("Kenz Ramadan Progress", userProgress);
+      
+      // Hide any level screens and the final screen, then show the welcome screen
+      document.getElementById("level1").style.display = "none";
+      document.getElementById("level2").style.display = "none";
+      document.getElementById("level3").style.display = "none";
+      document.getElementById("finalScreen").style.display = "none";
+      
+      // Optionally, reset any mission content (if needed)
+      // For example, reset innerHTML of mission containers to their initial state.
+      
+      // Show the welcome screen
+      document.getElementById("welcomeScreen").style.display = "block";
+      setTimeout(() => {
+        document.getElementById("welcomeScreen").classList.add("active");
+      }, 100);
+      
+      // Optionally, hide the progress bar again if you only want it to show after starting
+      document.getElementById("globalProgressBar").style.opacity = "0";
+      
+      // You can also reset other UI elements as needed.
+      
+      // Optionally, log or track the reset event:
+      trackEvent("game_reset", { newProgress: userProgress });
+    }
+
+    
+    // Fire the function navigate progress bar
+    updateProgressBar();
+  </script>
+</body>
+</html>
